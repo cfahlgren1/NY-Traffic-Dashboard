@@ -10,9 +10,9 @@
         lg="4"
       >
         <base-material-chart-card
-          :data="emailsSubscriptionChart.data"
-          :options="emailsSubscriptionChart.options"
-          :responsive-options="emailsSubscriptionChart.responsiveOptions"
+          :data="getBoroughData"
+          :options="boroughChart.options"
+          :responsive-options="boroughChart.responsiveOptions"
           color="#E91E63"
           hover-reveal
           type="Bar"
@@ -54,11 +54,11 @@
           </template>
 
           <h4 class="card-title font-weight-light mt-2 ml-2">
-            Website Views
+            New York Boroughs
           </h4>
 
           <p class="d-inline-flex font-weight-light ml-2 mt-1">
-            Last Campaign Performance
+            Accidents by location
           </p>
 
           <template v-slot:actions>
@@ -66,9 +66,11 @@
               class="mr-1"
               small
             >
-              mdi-clock-outline
+              mdi-city
             </v-icon>
-            <span class="caption grey--text font-weight-light">updated 10 minutes ago</span>
+            <span class="caption grey--text font-weight-light">
+              Brooklyn Manhattan Queens Bronx
+            </span>
           </template>
         </base-material-chart-card>
       </v-col>
@@ -221,11 +223,11 @@
       >
         <base-material-stats-card
           color="info"
-          icon="mdi-twitter"
-          title="Followers"
-          value="+245"
-          sub-icon="mdi-clock"
-          sub-text="Just Updated"
+          icon="mdi-car"
+          title="Accidents"
+          sub-icon="mdi-calendar"
+          :sub-text="monthString"
+          :value="total_crashes"
         />
       </v-col>
 
@@ -236,11 +238,11 @@
       >
         <base-material-stats-card
           color="primary"
-          icon="mdi-poll"
-          title="Website Visits"
-          value="75.521"
-          sub-icon="mdi-tag"
-          sub-text="Tracked from Google Analytics"
+          icon="mdi-account-group"
+          title="Pedestrians Accidents"
+          :value="pedestrianCrashes"
+          sub-icon="mdi-calendar"
+          :sub-text="monthString"
         />
       </v-col>
 
@@ -251,11 +253,11 @@
       >
         <base-material-stats-card
           color="success"
-          icon="mdi-store"
-          title="Revenue"
-          value="$ 34,245"
+          icon="mdi-account"
+          title="Fatalities"
+          :value="personsKilled"
           sub-icon="mdi-calendar"
-          sub-text="Last 24 Hours"
+          :sub-text="monthString"
         />
       </v-col>
 
@@ -266,12 +268,10 @@
       >
         <base-material-stats-card
           color="orange"
-          icon="mdi-sofa"
-          title="Bookings"
-          value="184"
-          sub-icon="mdi-alert"
-          sub-icon-color="red"
-          sub-text="Get More Space..."
+          icon="mdi-motorbike"
+          title="Motorists Injured"
+          :value="184"
+          :sub-text="monthString"
         />
       </v-col>
 
@@ -305,6 +305,11 @@
 </template>
 
 <script>
+  import Vue from 'vue'
+  import axios from 'axios'
+  import VueAxios from 'vue-axios'
+
+  Vue.use(VueAxios, axios)
   export default {
     name: 'DashboardDashboard',
 
@@ -352,12 +357,11 @@
             },
           },
         },
-        emailsSubscriptionChart: {
+        boroughChart: {
           data: {
-            labels: ['Ja', 'Fe', 'Ma', 'Ap', 'Mai', 'Ju', 'Jul', 'Au', 'Se', 'Oc', 'No', 'De'],
+            labels: ['BKLN', 'MANH', 'QNS', 'BX', 'SI', 'UNKN'],
             series: [
-              [542, 443, 320, 780, 553, 453, 326, 434, 568, 610, 756, 895],
-
+              [100, 100, 100, 100, 100, 100],
             ],
           },
           options: {
@@ -365,7 +369,7 @@
               showGrid: false,
             },
             low: 0,
-            high: 1000,
+            high: 2000,
             chartPadding: {
               top: 0,
               right: 5,
@@ -452,61 +456,98 @@
           },
         ],
         tabs: 0,
-        tasks: {
-          0: [
-            {
-              text: 'Sign contract for "What are conference organizers afraid of?"',
-              value: true,
-            },
-            {
-              text: 'Lines From Great Russian Literature? Or E-mails From My Boss?',
-              value: false,
-            },
-            {
-              text: 'Flooded: One year later, assessing what was lost and what was found when a ravaging rain swept through metro Detroit',
-              value: false,
-            },
-            {
-              text: 'Create 4 Invisible User Experiences you Never Knew About',
-              value: true,
-            },
-          ],
-          1: [
-            {
-              text: 'Flooded: One year later, assessing what was lost and what was found when a ravaging rain swept through metro Detroit',
-              value: true,
-            },
-            {
-              text: 'Sign contract for "What are conference organizers afraid of?"',
-              value: false,
-            },
-          ],
-          2: [
-            {
-              text: 'Lines From Great Russian Literature? Or E-mails From My Boss?',
-              value: false,
-            },
-            {
-              text: 'Flooded: One year later, assessing what was lost and what was found when a ravaging rain swept through metro Detroit',
-              value: true,
-            },
-            {
-              text: 'Sign contract for "What are conference organizers afraid of?"',
-              value: true,
-            },
-          ],
-        },
         list: {
           0: false,
           1: false,
           2: false,
         },
+        number_of_motorist_injured: 0,
+        number_of_pedestrians_injured: 0,
+        number_of_persons_killed: 0,
+        contributing_factor_vehicle_1: 0,
+        contributing_factor_vehicle_2: 0,
+        contributing_factor_vehicle_3: 0,
+        contributing_factor_vehicle_4: 0,
+        contributing_factor_vehicle_5: 0,
+        total_crashes: 0,
+        day_accidents: 0,
+        crash_date: null,
+        alcoholCrashes: 0,
+        pedestrianCrashes: 0,
+        motoristCrashes: 0,
+        personsKilled: 0,
+        dateFrom: '',
+        dateTo: '',
+        monthString: '',
+        contributingFactors: {},
+        borough: '',
       }
+    },
+    computed: {
+      getBoroughData: function () {
+        return this.boroughChart.data
+      },
+    },
+    mounted () {
+      this.getData()
     },
 
     methods: {
       complete (index) {
         this.list[index] = !this.list[index]
+      },
+      incrementBronx () {
+        this.boroughChart.data.series[3] = this.boroughChart.data.series[3] + 1
+      },
+      getData () {
+        const priorDate = new Date()
+        priorDate.setDate(priorDate.getDate() - 35) // get previous 30 day
+        const timeString = priorDate.toISOString().substring(0, priorDate.toISOString().length - 2) // change it into format that NY API can understand
+        const params = {
+          $where: 'crash_date >= \'' + timeString + '\'',
+          $limit: 6000,
+          $order: 'crash_date',
+        }
+        Vue.axios.get('https://data.cityofnewyork.us/resource/h9gi-nx95.geojson?', { params }).then((response) => {
+          console.log(response.data.features)
+          this.dateFrom = new Date(response.data.features[0].properties.crash_date)
+          this.dateTo = new Date(response.data.features[response.data.features.length - 1].properties.crash_date)
+          const toDate = this.dateTo.toString().split(' ')
+          this.dateTo = toDate[0] + ' ' + toDate[1] + ' ' + toDate[2]
+          const fromDate = this.dateFrom.toString().split(' ')
+          this.dateFrom = fromDate[0] + ' ' + fromDate[1] + ' ' + fromDate[2]
+          this.monthString = this.dateFrom + ' to ' + this.dateTo
+
+          this.total_crashes = Object.keys(response.data.features).length // set total_crashes to crashes in last 30 days
+          response.data.features.forEach(x => {
+            // Record Motorist Injured
+            if (x.properties.number_of_motorist_injured > 0) {
+              this.motoristCrashes += parseInt(x.properties.number_of_motorist_injured)
+            }
+            // Record Pedestrian Injured
+            if (x.properties.number_of_pedestrians_injured > 0) {
+              this.pedestrianCrashes += parseInt(x.properties.number_of_pedestrians_injured)
+            }
+            // Record Persons Killed
+            if (x.properties.number_of_persons_killed > 0) {
+              this.personsKilled += parseInt(x.properties.number_of_persons_killed)
+            }
+            // Increment based on the location of accidents
+            if (x.properties.borough === 'BROOKLYN') {
+              this.boroughChart.data.series[0][0] += 1
+            } else if (x.properties.borough === 'MANHATTAN') {
+              this.boroughChart.data.series[0][1] += 1
+            } else if (x.properties.borough === 'QUEENS') {
+              this.boroughChart.data.series[0][2] += 1
+            } else if (x.properties.borough === 'BRONX') {
+              this.boroughChart.data.series[0][3] += 1
+            } else if (x.properties.borough === 'STATEN ISLAND') {
+              this.boroughChart.data.series[0][4] += 1
+            } else if (x.properties.borough === null) {
+              this.boroughChart.data.series[0][5] += 1
+            }
+          })
+        })
       },
     },
   }

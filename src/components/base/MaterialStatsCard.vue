@@ -76,7 +76,7 @@
         default: undefined,
       },
       value: {
-        type: String,
+        type: Number,
         default: undefined,
       },
       smallValue: {
