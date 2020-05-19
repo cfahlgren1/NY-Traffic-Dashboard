@@ -10,6 +10,7 @@
         lg="4"
       >
         <base-material-chart-card
+          v-if="boroughLoaded"
           :data="getBoroughData"
           :options="boroughChart.options"
           :responsive-options="boroughChart.responsiveOptions"
@@ -361,7 +362,7 @@
           data: {
             labels: ['BKLN', 'MANH', 'QNS', 'BX', 'SI', 'UNKN'],
             series: [
-              [100, 100, 100, 100, 100, 100],
+              [0, 0, 0, 0, 0, 0],
             ],
           },
           options: {
@@ -381,9 +382,7 @@
             ['screen and (max-width: 640px)', {
               seriesBarDistance: 5,
               axisX: {
-                labelInterpolationFnc: function (value) {
-                  return value[0]
-                },
+                labelInterpolationFnc: (value) => value[0],
               },
             }],
           ],
@@ -481,17 +480,18 @@
         monthString: '',
         contributingFactors: {},
         borough: '',
+        boroughLoaded: false,
       }
     },
     computed: {
       getBoroughData: function () {
+        console.log(this.boroughChart.data)
         return this.boroughChart.data
       },
     },
     mounted () {
       this.getData()
     },
-
     methods: {
       complete (index) {
         this.list[index] = !this.list[index]
@@ -510,13 +510,13 @@
         }
         Vue.axios.get('https://data.cityofnewyork.us/resource/h9gi-nx95.geojson?', { params }).then((response) => {
           console.log(response.data.features)
-          this.dateFrom = new Date(response.data.features[0].properties.crash_date)
-          this.dateTo = new Date(response.data.features[response.data.features.length - 1].properties.crash_date)
+          this.dateFrom = new Date(response.data.features[0].properties.crash_date) // get date from
+          this.dateTo = new Date(response.data.features[response.data.features.length - 1].properties.crash_date) // get date to
           const toDate = this.dateTo.toString().split(' ')
           this.dateTo = toDate[0] + ' ' + toDate[1] + ' ' + toDate[2]
           const fromDate = this.dateFrom.toString().split(' ')
           this.dateFrom = fromDate[0] + ' ' + fromDate[1] + ' ' + fromDate[2]
-          this.monthString = this.dateFrom + ' to ' + this.dateTo
+          this.monthString = this.dateFrom + ' to ' + this.dateTo // from to date string label
 
           this.total_crashes = Object.keys(response.data.features).length // set total_crashes to crashes in last 30 days
           response.data.features.forEach(x => {
@@ -546,6 +546,7 @@
             } else if (x.properties.borough === null) {
               this.boroughChart.data.series[0][5] += 1
             }
+            this.boroughLoaded = true
           })
         })
       },
