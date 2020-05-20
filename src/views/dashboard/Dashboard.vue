@@ -70,7 +70,7 @@
               mdi-city
             </v-icon>
             <span class="caption grey--text font-weight-light">
-              Brooklyn Manhattan Queens Bronx
+              Brooklyn Manhattan Queens Bronx Staten Island
             </span>
           </template>
         </base-material-chart-card>
@@ -81,8 +81,9 @@
         lg="4"
       >
         <base-material-chart-card
-          :data="dailySalesChart.data"
-          :options="dailySalesChart.options"
+          v-if="boroughLoaded"
+          :data="dailyAccidentsChart.data"
+          :options="dailyAccidentsChart.options"
           color="success"
           hover-reveal
           type="Line"
@@ -124,18 +125,11 @@
           </template>
 
           <h4 class="card-title font-weight-light mt-2 ml-2">
-            Daily Sales
+            Weekly
           </h4>
 
           <p class="d-inline-flex font-weight-light ml-2 mt-1">
-            <v-icon
-              color="green"
-              small
-            >
-              mdi-arrow-up
-            </v-icon>
-            <span class="green--text">55%</span>&nbsp;
-            increase in today's sales
+            <span>Traffic Accidents by Day of Week</span>&nbsp;
           </p>
 
           <template v-slot:actions>
@@ -145,7 +139,7 @@
             >
               mdi-clock-outline
             </v-icon>
-            <span class="caption grey--text font-weight-light">updated 4 minutes ago</span>
+            <span class="caption grey--text font-weight-light">{{ current_time }}</span>
           </template>
         </base-material-chart-card>
       </v-col>
@@ -212,7 +206,7 @@
             >
               mdi-clock-outline
             </v-icon>
-            <span class="caption grey--text font-weight-light">campaign sent 26 minutes ago</span>
+            <span class="caption grey--text font-weight-light">{{ current_time }}</span>
           </template>
         </base-material-chart-card>
       </v-col>
@@ -271,7 +265,8 @@
           color="orange"
           icon="mdi-motorbike"
           title="Motorists Injured"
-          :value="184"
+          :value="motoristCrashes"
+          sub-icon="mdi-calendar"
           :sub-text="monthString"
         />
       </v-col>
@@ -286,11 +281,11 @@
         >
           <template v-slot:heading>
             <div class="display-2 font-weight-light">
-              Employees Stats
+              Contributing Factor to Accidents
             </div>
 
             <div class="subtitle-1 font-weight-light">
-              New employees on 15th September, 2016
+              Accidents with Fatalities and Contributing Factor
             </div>
           </template>
           <v-card-text>
@@ -316,11 +311,11 @@
 
     data () {
       return {
-        dailySalesChart: {
+        dailyAccidentsChart: {
           data: {
-            labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+            labels: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
             series: [
-              [12, 17, 7, 17, 23, 18, 38],
+              [0, 0, 0, 0, 0, 0, 0],
             ],
           },
           options: {
@@ -328,7 +323,7 @@
               tension: 0,
             }),
             low: 0,
-            high: 50, // creative tim: we recommend you to set the high sa the biggest value + something for a better look
+            high: 1000,
             chartPadding: {
               top: 0,
               right: 0,
@@ -395,65 +390,29 @@
           },
           {
             sortable: false,
-            text: 'Name',
-            value: 'name',
+            text: 'Contributing Factor',
+            value: 'contributing_factor',
           },
           {
             sortable: false,
-            text: 'Salary',
-            value: 'salary',
+            text: 'Vehicle',
+            value: 'vehicle',
             align: 'right',
           },
           {
             sortable: false,
-            text: 'Country',
-            value: 'country',
-            align: 'right',
+            text: 'Fatalities',
+            value: 'fatalities',
+            align: 'center',
           },
           {
             sortable: false,
-            text: 'City',
-            value: 'city',
-            align: 'right',
+            text: 'Borough',
+            value: 'borough',
+            align: 'left',
           },
         ],
-        items: [
-          {
-            id: 1,
-            name: 'Dakota Rice',
-            country: 'Niger',
-            city: 'Oud-Tunrhout',
-            salary: '$35,738',
-          },
-          {
-            id: 2,
-            name: 'Minerva Hooper',
-            country: 'Curaçao',
-            city: 'Sinaai-Waas',
-            salary: '$23,738',
-          },
-          {
-            id: 3,
-            name: 'Sage Rodriguez',
-            country: 'Netherlands',
-            city: 'Overland Park',
-            salary: '$56,142',
-          },
-          {
-            id: 4,
-            name: 'Philip Chanley',
-            country: 'Korea, South',
-            city: 'Gloucester',
-            salary: '$38,735',
-          },
-          {
-            id: 5,
-            name: 'Doris Greene',
-            country: 'Malawi',
-            city: 'Feldkirchen in Kārnten',
-            salary: '$63,542',
-          },
-        ],
+        items: [],
         tabs: 0,
         list: {
           0: false,
@@ -481,6 +440,7 @@
         contributingFactors: {},
         borough: '',
         boroughLoaded: false,
+        current_time: 'loading',
       }
     },
     computed: {
@@ -501,7 +461,7 @@
       },
       getData () {
         const priorDate = new Date()
-        priorDate.setDate(priorDate.getDate() - 35) // get previous 30 day
+        priorDate.setDate(priorDate.getDate() - 33) // get previous 30 day
         const timeString = priorDate.toISOString().substring(0, priorDate.toISOString().length - 2) // change it into format that NY API can understand
         const params = {
           $where: 'crash_date >= \'' + timeString + '\'',
@@ -517,6 +477,7 @@
           const fromDate = this.dateFrom.toString().split(' ')
           this.dateFrom = fromDate[0] + ' ' + fromDate[1] + ' ' + fromDate[2]
           this.monthString = this.dateFrom + ' to ' + this.dateTo // from to date string label
+          var listID = 0
 
           this.total_crashes = Object.keys(response.data.features).length // set total_crashes to crashes in last 30 days
           response.data.features.forEach(x => {
@@ -532,6 +493,16 @@
             if (x.properties.number_of_persons_killed > 0) {
               this.personsKilled += parseInt(x.properties.number_of_persons_killed)
             }
+            // if contributing factor was specified, add it to the list
+            if (x.properties.contributing_factor_vehicle_1 !== 'null' && x.properties.contributing_factor_vehicle_1 !== 'Unspecified') {
+              this.items.push({
+                id: ++listID,
+                contributing_factor: x.properties.contributing_factor_vehicle_1,
+                vehicle: x.properties.vehicle_type_code1,
+                fatalities: x.properties.number_of_persons_killed,
+                borough: x.properties.borough,
+              })
+            }
             // Increment based on the location of accidents
             if (x.properties.borough === 'BROOKLYN') {
               this.boroughChart.data.series[0][0] += 1
@@ -546,7 +517,24 @@
             } else if (x.properties.borough === null) {
               this.boroughChart.data.series[0][5] += 1
             }
-            this.boroughLoaded = true
+            const today = new Date(x.properties.crash_date) // create date object for finding day of the week
+            if (today.getDay() === 0) {
+              this.dailyAccidentsChart.data.series[0][0] += 1
+            } else if (today.getDay() === 1) {
+              this.dailyAccidentsChart.data.series[0][1] += 1
+            } else if (today.getDay() === 2) {
+              this.dailyAccidentsChart.data.series[0][2] += 1
+            } else if (today.getDay() === 3) {
+              this.dailyAccidentsChart.data.series[0][3] += 1
+            } else if (today.getDay() === 4) {
+              this.dailyAccidentsChart.data.series[0][4] += 1
+            } else if (today.getDay() === 5) {
+              this.dailyAccidentsChart.data.series[0][5] += 1
+            } else if (today.getDay() === 6) {
+              this.dailyAccidentsChart.data.series[0][6] += 1
+            }
+            this.boroughLoaded = true // update borough chart
+            this.current_time = 'updated at ' + new Date().toLocaleTimeString()
           })
         })
       },
