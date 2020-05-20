@@ -10,7 +10,7 @@
         lg="4"
       >
         <base-material-chart-card
-          v-if="boroughLoaded"
+          v-if="chartLoaded"
           :data="getBoroughData"
           :options="boroughChart.options"
           :responsive-options="boroughChart.responsiveOptions"
@@ -55,11 +55,10 @@
           </template>
 
           <h4 class="card-title font-weight-light mt-2 ml-2">
-            New York Boroughs
+            Accidents by Location
           </h4>
 
           <p class="d-inline-flex font-weight-light ml-2 mt-1">
-            Accidents by location
           </p>
 
           <template v-slot:actions>
@@ -81,7 +80,7 @@
         lg="4"
       >
         <base-material-chart-card
-          v-if="boroughLoaded"
+          v-if="chartLoaded"
           :data="dailyAccidentsChart.data"
           :options="dailyAccidentsChart.options"
           color="success"
@@ -149,11 +148,13 @@
         lg="4"
       >
         <base-material-chart-card
-          :data="dataCompletedTasksChart.data"
-          :options="dataCompletedTasksChart.options"
+          v-if="chartLoaded"
+          :data="vehicleChart.data"
+          :options="vehicleChart.options"
+          :responsive-options="vehicleChart.responsiveOptions"
+          color="#E91E63"
           hover-reveal
-          color="info"
-          type="Line"
+          type="Bar"
         >
           <template v-slot:reveal-actions>
             <v-tooltip bottom>
@@ -191,12 +192,12 @@
             </v-tooltip>
           </template>
 
-          <h3 class="card-title font-weight-light mt-2 ml-2">
-            Completed Tasks
-          </h3>
+          <h4 class="card-title font-weight-light mt-2 ml-2">
+            Accidents by Vehicle Type
+          </h4>
 
           <p class="d-inline-flex font-weight-light ml-2 mt-1">
-            Last Last Campaign Performance
+            SUV/Van | Sedan | Truck | Motorcycle/Bike/Scooter | Other
           </p>
 
           <template v-slot:actions>
@@ -206,7 +207,9 @@
             >
               mdi-clock-outline
             </v-icon>
-            <span class="caption grey--text font-weight-light">{{ current_time }}</span>
+            <span class="caption grey--text font-weight-light">
+              {{ current_time }}
+            </span>
           </template>
         </base-material-chart-card>
       </v-col>
@@ -248,7 +251,7 @@
       >
         <base-material-stats-card
           color="success"
-          icon="mdi-account"
+          icon="mdi-hospital-building"
           title="Fatalities"
           :value="personsKilled"
           sub-icon="mdi-calendar"
@@ -263,7 +266,7 @@
       >
         <base-material-stats-card
           color="orange"
-          icon="mdi-motorbike"
+          icon="mdi-bandage"
           title="Motorists Injured"
           :value="motoristCrashes"
           sub-icon="mdi-calendar"
@@ -323,28 +326,7 @@
               tension: 0,
             }),
             low: 0,
-            high: 1000,
-            chartPadding: {
-              top: 0,
-              right: 0,
-              bottom: 0,
-              left: 0,
-            },
-          },
-        },
-        dataCompletedTasksChart: {
-          data: {
-            labels: ['12am', '3pm', '6pm', '9pm', '12pm', '3am', '6am', '9am'],
-            series: [
-              [230, 750, 450, 300, 280, 240, 200, 190],
-            ],
-          },
-          options: {
-            lineSmooth: this.$chartist.Interpolation.cardinal({
-              tension: 0,
-            }),
-            low: 0,
-            high: 1000, // creative tim: we recommend you to set the high sa the biggest value + something for a better look
+            high: 1400,
             chartPadding: {
               top: 0,
               right: 0,
@@ -366,6 +348,35 @@
             },
             low: 0,
             high: 2000,
+            chartPadding: {
+              top: 0,
+              right: 5,
+              bottom: 0,
+              left: 0,
+            },
+          },
+          responsiveOptions: [
+            ['screen and (max-width: 640px)', {
+              seriesBarDistance: 5,
+              axisX: {
+                labelInterpolationFnc: (value) => value[0],
+              },
+            }],
+          ],
+        },
+        vehicleChart: {
+          data: {
+            labels: ['SU', 'SE', 'T', 'MC', 'Other'],
+            series: [
+              [0, 0, 0, 0, 0],
+            ],
+          },
+          options: {
+            axisX: {
+              showGrid: false,
+            },
+            low: 0,
+            high: 3500,
             chartPadding: {
               top: 0,
               right: 5,
@@ -439,7 +450,7 @@
         monthString: '',
         contributingFactors: {},
         borough: '',
-        boroughLoaded: false,
+        chartLoaded: false,
         current_time: 'loading',
       }
     },
@@ -461,7 +472,7 @@
       },
       getData () {
         const priorDate = new Date()
-        priorDate.setDate(priorDate.getDate() - 33) // get previous 30 day
+        priorDate.setDate(priorDate.getDate() - 40) // get previous 30 day
         const timeString = priorDate.toISOString().substring(0, priorDate.toISOString().length - 2) // change it into format that NY API can understand
         const params = {
           $where: 'crash_date >= \'' + timeString + '\'',
@@ -493,8 +504,8 @@
             if (x.properties.number_of_persons_killed > 0) {
               this.personsKilled += parseInt(x.properties.number_of_persons_killed)
             }
-            // if contributing factor was specified, add it to the list
-            if (x.properties.contributing_factor_vehicle_1 !== 'null' && x.properties.contributing_factor_vehicle_1 !== 'Unspecified') {
+            // if contributing factor for vehicle 1 was specified, add it to the list
+            if (x.properties.contributing_factor_vehicle_1 !== null && x.properties.contributing_factor_vehicle_1 !== 'Unspecified') {
               this.items.push({
                 id: ++listID,
                 contributing_factor: x.properties.contributing_factor_vehicle_1,
@@ -502,6 +513,43 @@
                 fatalities: x.properties.number_of_persons_killed,
                 borough: x.properties.borough,
               })
+              // if contributing factor for vehicle 2 was specified, add it to the list
+              if (x.properties.contributing_factor_vehicle_2 !== null && x.properties.contributing_factor_vehicle_2 !== 'Unspecified') {
+                this.items.push({
+                  id: ++listID,
+                  contributing_factor: x.properties.contributing_factor_vehicle_2,
+                  vehicle: x.properties.vehicle_type_code2,
+                  fatalities: x.properties.number_of_persons_killed,
+                  borough: x.properties.borough,
+                })
+              }
+              // catagorization of vehicles
+              const sportsUtilitySet = new Set(['Station Wagon/Sport Utility Vehicle', 'Refrigerated Van', 'Ambulance', 'Van', 'AMBUL', 'AMBULANCE', 'ambulance'])
+              const truckSet = new Set(['truck', 'Box Truck', 'PICK-', 'PK', 'SKID LOADE', 'mailtruck', 'Stake Truck', 'Stake or Rack', 'Concrete Mixer', 'Bulk Agriculture', 'Pick-up Truck', 'Pickup-Truck', 'Chassis Cab', 'Dump', 'TRAILER', 'Tractor Truck Diesel', 'Beverage Truck', 'Trailer', 'Garbage or Refuse', 'Flat Bed', 'camper tra', 'FDNY TRUCK', 'Bus', 'Carry ALL', 'Tow Truck / Wrecker', 'FDNY Truck', 'PICK UP', 'FLATBED', 'Tractor Truck Gasoline', 'PICK -', 'UTIL', 'Tanker'])
+              const sedanSet = new Set(['4 dr sedan', 'Taxi', 'Sedan', 'Convertible'])
+              const motorSet = new Set(['Motorbike', 'Motorcycle', 'Dirt bike', 'DIRT BIKE', 'Moped', 'Bike', 'E-Sco', 'Motorscooter', 'E-Scooter', 'E-Bike'])
+              if (sportsUtilitySet.has(x.properties.vehicle_type_code1)) {
+                this.vehicleChart.data.series[0][0] += 1
+              } else if (sedanSet.has(x.properties.vehicle_type_code1)) {
+                this.vehicleChart.data.series[0][1] += 1
+              } else if (truckSet.has(x.properties.vehicle_type_code1)) {
+                this.vehicleChart.data.series[0][2] += 1
+              } else if (motorSet.has(x.properties.vehicle_type_code1)) {
+                this.vehicleChart.data.series[0][3] += 1
+              } else {
+                this.vehicleChart.data.series[0][4] += 1
+              }
+              if (sportsUtilitySet.has(x.properties.vehicle_type_code2)) {
+                this.vehicleChart.data.series[0][0] += 1
+              } else if (sedanSet.has(x.properties.vehicle_type_code2)) {
+                this.vehicleChart.data.series[0][1] += 1
+              } else if (truckSet.has(x.properties.vehicle_type_code2)) {
+                this.vehicleChart.data.series[0][2] += 1
+              } else if (motorSet.has(x.properties.vehicle_type_code2)) {
+                this.vehicleChart.data.series[0][3] += 1
+              } else {
+                this.vehicleChart.data.series[0][4] += 1
+              }
             }
             // Increment based on the location of accidents
             if (x.properties.borough === 'BROOKLYN') {
@@ -533,7 +581,7 @@
             } else if (today.getDay() === 6) {
               this.dailyAccidentsChart.data.series[0][6] += 1
             }
-            this.boroughLoaded = true // update borough chart
+            this.chartLoaded = true // update borough chart
             this.current_time = 'updated at ' + new Date().toLocaleTimeString()
           })
         })

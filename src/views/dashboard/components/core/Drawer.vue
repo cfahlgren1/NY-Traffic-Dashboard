@@ -102,11 +102,6 @@
           to: '/',
         },
         {
-          title: 'rtables',
-          icon: 'mdi-clipboard-outline',
-          to: '/tables/regular-tables',
-        },
-        {
           title: 'google',
           icon: 'mdi-map-marker',
           to: '/maps/google-maps',
