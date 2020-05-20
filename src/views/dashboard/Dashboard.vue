@@ -58,8 +58,7 @@
             Accidents by Location
           </h4>
 
-          <p class="d-inline-flex font-weight-light ml-2 mt-1">
-          </p>
+          <p class="d-inline-flex font-weight-light ml-2 mt-1" />
 
           <template v-slot:actions>
             <v-icon
@@ -456,7 +455,6 @@
     },
     computed: {
       getBoroughData: function () {
-        console.log(this.boroughChart.data)
         return this.boroughChart.data
       },
     },
@@ -480,7 +478,6 @@
           $order: 'crash_date',
         }
         Vue.axios.get('https://data.cityofnewyork.us/resource/h9gi-nx95.geojson?', { params }).then((response) => {
-          console.log(response.data.features)
           this.dateFrom = new Date(response.data.features[0].properties.crash_date) // get date from
           this.dateTo = new Date(response.data.features[response.data.features.length - 1].properties.crash_date) // get date to
           const toDate = this.dateTo.toString().split(' ')
