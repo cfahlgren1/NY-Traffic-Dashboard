@@ -411,8 +411,8 @@
           },
           {
             sortable: false,
-            text: 'Fatalities',
-            value: 'fatalities',
+            text: 'Injuries',
+            value: 'injuries',
             align: 'center',
           },
           {
@@ -507,7 +507,7 @@
                 id: ++listID,
                 contributing_factor: x.properties.contributing_factor_vehicle_1,
                 vehicle: x.properties.vehicle_type_code1,
-                fatalities: x.properties.number_of_persons_killed,
+                injuries: x.properties.number_of_persons_injured,
                 borough: x.properties.borough,
               })
               // if contributing factor for vehicle 2 was specified, add it to the list
@@ -516,7 +516,7 @@
                   id: ++listID,
                   contributing_factor: x.properties.contributing_factor_vehicle_2,
                   vehicle: x.properties.vehicle_type_code2,
-                  fatalities: x.properties.number_of_persons_killed,
+                  injuries: x.properties.number_of_persons_injured,
                   borough: x.properties.borough,
                 })
               }

@@ -101,11 +101,6 @@
           title: 'dashboard',
           to: '/',
         },
-        {
-          title: 'google',
-          icon: 'mdi-map-marker',
-          to: '/maps/google-maps',
-        },
       ],
     }),
 
